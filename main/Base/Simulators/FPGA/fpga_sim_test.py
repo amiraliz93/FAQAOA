@@ -469,7 +469,7 @@ def level2_hardware(port, NQ=5, Np=2, sim_Cpp=True, ouput_sim=""):
                 fs.write(f"Im(p_{i}), {float_to_hex(sv_ref[i].imag)}\n")
             fs.close()
         
-        with open("result.txt","w") as f:
+        with open(f"result-NQ{NQ}-NP{Np}.txt","w") as f:
             for i in range(NS): f.write(float_to_hex(sv_ref[i].real) + "\n")
             for i in range(NS): f.write(float_to_hex(sv_ref[i].imag) + "\n")
         # Simulation part end
@@ -506,7 +506,7 @@ def level2_hardware(port, NQ=5, Np=2, sim_Cpp=True, ouput_sim=""):
             sb_arr.astype("<f8", copy=False).tofile(f)
 
         t0_cpu = time.perf_counter()
-        subprocess.run([exe_path, in_file, out_file, "result.txt"], check=True)
+        subprocess.run([exe_path, in_file, out_file, f"result-NQ{NQ}-NP{Np}.txt"], check=True)
         dt_cpu = time.perf_counter() - t0_cpu
         print(f"  C++ CPU reference wall time: {dt_cpu:.6f} s")
 
@@ -542,7 +542,7 @@ def level2_hardware(port, NQ=5, Np=2, sim_Cpp=True, ouput_sim=""):
     print(f"  Result   : {'PASS ✓' if ok else 'FAIL ✗  (MAE too large)'}")
     
     # Save outputs
-    with open("resultFPGA.txt","w") as f:
+    with open(f"resultFPGA-NQ{NQ}-NP{Np}.txt","w") as f:
         for i in range(NS): f.write(f"0x{(int(round(sv_fpga[i].real*(1<<61)))&0xFFFFFFFFFFFFFFFF):016x}\n")
         for i in range(NS): f.write(f"0x{(int(round(sv_fpga[i].imag*(1<<61)))&0xFFFFFFFFFFFFFFFF):016x}\n")
     
