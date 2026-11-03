@@ -7,3 +7,8 @@ greybox_tmp
 
 all_test_cmd.sv
 Golden_TOP_nativelink_simulation.rpt
+
+Golden_TOP.qws
+result.txt
+resultFPGA.txt
+simulation.tx

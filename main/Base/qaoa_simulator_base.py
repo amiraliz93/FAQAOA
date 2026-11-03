@@ -82,7 +82,6 @@ class Sim_Base(ABC):
 
         """
         ...
-
     @abstractmethod
     def _diag_from_costs(self, costs: CostsType) -> typing.Any:
         """
@@ -93,9 +92,7 @@ class Sim_Base(ABC):
             costs: A sequence or a numpy array of length 2**n_qubits
         """
         ...
-
     # -- Public methods
-
     @abstractmethod
     def get_cost_diagonal(self) -> np.ndarray:
         """

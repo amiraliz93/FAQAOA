@@ -1,5 +1,5 @@
 IP Upgrade report for Golden_TOP
-Fri Apr 17 21:52:00 2026
+Thu Jun 25 05:21:25 2026
 Quartus Prime Version 25.1std.0 Build 1129 10/21/2025 SC Standard Edition
 
 
@@ -8,8 +8,7 @@ Quartus Prime Version 25.1std.0 Build 1129 10/21/2025 SC Standard Edition
 ---------------------
   1. Legal Notice
   2. IP Upgrade Summary
-  3. Failed Upgrade IP Components
-  4. IP Upgrade Messages
+  3. IP Upgrade Messages
 
 
 
@@ -36,36 +35,22 @@ on the Quartus Prime software download page.
 +------------------------------------------------------------------------------------+
 ; IP Upgrade Summary                                                                 ;
 +------------------------------+-----------------------------------------------------+
-; IP Components Upgrade Status ; Passed - Fri Apr 17 21:52:00 2026                   ;
+; IP Components Upgrade Status ; Failed - Thu Jun 25 05:21:25 2026                   ;
 ; Quartus Prime Version        ; 25.1std.0 Build 1129 10/21/2025 SC Standard Edition ;
 ; Revision Name                ; Golden_TOP                                          ;
-; Top-level Entity Name        ; top1                                                ;
+; Top-level Entity Name        ; Golden_TOP3                                         ;
 ; Family                       ; Stratix V                                           ;
 +------------------------------+-----------------------------------------------------+
-
-
-+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-; Failed Upgrade IP Components                                                                                                                                                  ;
-+-------------+----------------+---------+-----------------------------------+----------------------+-----------------+---------------------------------------------------------+
-; Entity Name ; Component Name ; Version ; Original Source File              ; Generation File Path ; New Source File ; Message                                                 ;
-+-------------+----------------+---------+-----------------------------------+----------------------+-----------------+---------------------------------------------------------+
-; Cordic168   ; altera_CORDIC  ; 17.1    ; Cordic168/synthesis/Cordic168.qip ; Cordic168.qsys       ;                 ; Error upgrading Platform Designer file "Cordic168.qsys" ;
-+-------------+----------------+---------+-----------------------------------+----------------------+-----------------+---------------------------------------------------------+
 
 
 +---------------------+
 ; IP Upgrade Messages ;
 +---------------------+
-Info (11902): Backing up file "Cordic168/synthesis/Cordic168.v" to "Cordic168.BAK.v"
-Info (11837): Started upgrading IP component altera_CORDIC with file "Cordic168.qsys"
-Error: 2026.04.17.21:52:00 Error: Error opening C:/home/QAOAHP/main/Base/Simulators/FPGA/NTU_FPGA2
-Error (14923): Error upgrading Platform Designer file "Cordic168.qsys"
-Error (11890): Unable to automatically upgrade Platform Designer component. Please manually upgrade "Cordic168.qsys" in Platform Designer
-Error (23031): Evaluation of Tcl script c:/altera/25.1std/quartus/common/tcl/internal/ip_regen/ip_regen.tcl unsuccessful
-Error: Quartus Prime Shell was unsuccessful. 4 errors, 0 warnings
-    Error: Peak virtual memory: 4902 megabytes
-    Error: Processing ended: Fri Apr 17 21:52:00 2026
-    Error: Elapsed time: 00:00:04
-    Error: Total CPU time (on all processors): 00:00:09
+Info (23030): Evaluation of Tcl script c:/altera/25.1std/quartus/common/tcl/internal/ip_regen/ip_regen.tcl was successful
+Info: Quartus Prime Shell was successful. 0 errors, 0 warnings
+    Info: Peak virtual memory: 5099 megabytes
+    Info: Processing ended: Thu Jun 25 05:21:26 2026
+    Info: Elapsed time: 00:00:04
+    Info: Total CPU time (on all processors): 00:00:09
 
 

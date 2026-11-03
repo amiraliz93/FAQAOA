@@ -102,3 +102,30 @@ def convert_to_gamma_beta(*args, parameterization: QAOAParameterization | str):
     else:
         raise ValueError("Invalid parameterization")
     return gamma, beta
+
+
+
+def normalise_parameter(v, dtype=np.float64): 
+   # normalise into Q3.61-safe range
+    v = np.asarray(v, dtype=dtype)
+    v_max, v_min = float(v.max()), float(v.min())
+    mid, half = 0.5 * (v_max + v_min), 0.5 * (v_max - v_min)
+    if half == 0:  # constant cost -> cost layer is pure global phase
+        v_send, v_scale = np.zeros_like(v), 1.0
+    else:
+        v_send, v_scale = (v - mid) / half, half
+    
+    return v_send, v_scale
+def generate_mixer_sincos_fpga( beta, p):
+    
+    """ generate sin and cos for mixer layer for FPGA """
+
+    if beta is None:
+        raise ValueError("gamma and beta cannot be None")
+    if len(beta) != p: 
+        raise ValueError(f' beta must have length {p}')
+    else:
+        sinb = np.sin(np.asarray(beta, np.float64))
+        cosb = np.cos(np.asarray(beta, np.float64))
+    return cosb, sinb
+    

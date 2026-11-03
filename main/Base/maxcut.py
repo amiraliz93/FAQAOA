@@ -24,25 +24,31 @@ def maxcut_obj(x: np.ndarray, w: np.ndarray) -> float:
 
 def get_maxcut_terms(G: nx.Graph) -> TermsType:
     """Get terms corresponding to cost function value
-
+    It converts the MaxCut objective to the form of a cost Hamiltonia
     .. math::
+        C(z) = sum_{(i,j)} w_ij * (1 - s_i s_j) / 2
 
-        S = \\sum_{(i,j,w)\\in G} w*(1-s_i*s_j)/2
+    Terms follow:
+        C(z) = total_w/2 - sum_{(i,j)} (w_ij/2) Z_i Z_j
 
     Args:
         G: MaxCut problem graph
     Returns:
-        terms to be used in the simulation
+        terms to be used in the simulation ( return directly maxcut so optimiser need to )
     """
-    if nx.is_weighted(G):
-        terms = [(-float(G[u][v]["weight"]) / 2, (int(u), int(v))) for u, v in G.edges()]
-        total_w = sum([float(G[u][v]["weight"]) for u, v in G.edges()])
 
-    else:
-        terms = [(-(1 / 2), (int(e[0]), int(e[1]))) for e in G.edges()]
-        total_w = float(G.number_of_edges())
-    N = G.number_of_nodes()
-    terms.append((total_w / 2, tuple([])))
+    nodelist = list(G.nodes())
+    idx = {node: i for i, node in enumerate(nodelist)}
+
+    terms = []
+    total_w = 0.0
+    for u, v, data in G.edges(data=True):
+        w = float(data.get("weight", 1.0))
+        terms.append((-w / 2.0, (idx[u], idx[v])))
+        total_w += w
+
+    terms.append((total_w / 2.0, tuple()))
+
     return terms
 
 

@@ -16,11 +16,9 @@ class QAOAFastSimulatorPythonBase(Sim_Base):
 
     def _diag_from_costs(self, costs: CostsType):
         return np.asarray(costs, dtype="float")
-
     def _diag_from_terms(self, terms: TermsType):
         a = precompute_vectorized_cpu_parallel(terms, 0.0, self.n_qubits)
         return a
-
     def get_cost_diagonal(self) -> np.ndarray:
         return self._hc_diag
 
@@ -32,6 +30,7 @@ class QAOAFastSimulatorPythonBase(Sim_Base):
         raise NotImplementedError
     
      # -- Outputs
+
     def get_statevector(self, result: np.ndarray, **kwargs) -> np.ndarray:
         return result
 

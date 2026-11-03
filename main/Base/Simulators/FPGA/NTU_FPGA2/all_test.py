@@ -71,16 +71,15 @@ uart_port = 'COM6'
 # uart_port = "/dev/ttyUSB0"
 # uart_port = None
 baud_rate = 115200
-NQ = 5
+NQ = 6
 Np = 2     # number of p layers.
 F = 320*1e6 # Frequency of FPGa
-lineend = "" # lineend. It can be configured through command line argument. if not blanck string, this script will add comments into the output file of output_command_sv.
 # additional BRAM latency
-LP_BRAM_A = 2
+LP_BRAM_A = 1
 LP_BRAM_D = 1
-LP_GEN_COST = 2
-LP_MIXER_IN = 1
-LP_MIXER_OUT = 1
+LP_GEN_COST = 0
+LP_MIXER_IN = 0
+LP_MIXER_OUT = 0
 L_BRAM_R = LP_BRAM_A + LP_BRAM_D + 2
 L_BRAM_W = LP_BRAM_A + LP_BRAM_D + 2
 
@@ -96,7 +95,7 @@ if len(sys.argv) > 2:
     Np = int(sys.argv[2])
 
 # piplinig for gen cost, related to the latency of gen cost
-gcPipe = 1 + gcN0 + 1 + gcN1 + 1
+gcPipe = 1 + gcN0 + gcN0 + 1 + gcN1 + 1
 
 # totla latency including memory access (after issue address, till store result in BRAM) )
 Lc = 1 + gcPipe + 1 +  L_BRAM_R + LP_GEN_COST + LP_GEN_COST# output H latency + cost gen latency,  memory and register latency, address output latency.
@@ -581,7 +580,7 @@ f.write(f"integer seed = {seed};")
 AC = [b"".join(data_array)]
 f.write(f"// Version {random.random()}, {datetime.datetime.now()}\n")
 f.write(f"localparam ND={ND};\n")
-f.write(f"logic [7: 0] data_array [{ND}] = {{{ lineend}")
+f.write(f"logic [7: 0] data_array [{ND}] = {{\n")
 for i, b in enumerate(data_array):
     # print(type(b), b, len(b))
     for j in range(len(b)):
@@ -593,12 +592,10 @@ for i, b in enumerate(data_array):
         f.write(f",")
     skey = b.hex()
     if skey in idop:
-        if lineend != "":
-            f.write(f" // {idop[skey]}{lineend}")
+        f.write(f" // {idop[skey]}\n")
     elif len(b) == 8:
-        if lineend != "":
-            f.write(f" // {ib8(float_to_fixed(b))}{lineend}")
-f.write("};" + lineend)
+        f.write(f" // {hex_to_float(b[::-1].hex())} F\n")
+f.write("};\n" )
 f.close()
 #quit()
 

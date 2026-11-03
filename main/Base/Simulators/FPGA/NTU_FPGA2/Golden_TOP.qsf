@@ -37,6 +37,14 @@
 # -------------------------------------------------------------------------- #
 
 
+
+set_instance_assignment -name REMOVE_DUPLICATE_REGISTERS OFF -to *|GEN_BRAM[*].Raddr_w*
+set_instance_assignment -name REMOVE_DUPLICATE_REGISTERS OFF -to *|GEN_BRAM[*].Raddr_r*
+set_instance_assignment -name REMOVE_DUPLICATE_REGISTERS OFF -to *|GEN_BRAM[*].Iaddr_w*
+set_instance_assignment -name REMOVE_DUPLICATE_REGISTERS OFF -to *|GEN_BRAM[*].Iaddr_r*
+set_instance_assignment -name REMOVE_DUPLICATE_REGISTERS OFF -to *|GEN_BRAM[*].Haddr*
+
+
 set_global_assignment -name FAMILY "Stratix V"
 set_global_assignment -name DEVICE 5SGXEABN3F45I3YY
 set_global_assignment -name TOP_LEVEL_ENTITY Golden_TOP3
@@ -1889,6 +1897,8 @@ set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 set_global_assignment -name AUTO_DELAY_CHAINS_FOR_HIGH_FANOUT_INPUT_PINS ON
+set_global_assignment -name SYNTHESIS_EFFORT AUTO
+set_global_assignment -name FITTER_AGGRESSIVE_ROUTABILITY_OPTIMIZATION ALWAYS
 set_global_assignment -name SIP_FILE CORDIC_64_fixedP/simulation/CORDIC_64_fixedP.sip
 set_global_assignment -name QIP_FILE CORDIC_64_fixedP/synthesis/CORDIC_64_fixedP.qip
 set_global_assignment -name SYSTEMVERILOG_FILE Update_mixer.sv
@@ -1920,13 +1930,14 @@ set_global_assignment -name QIP_FILE fifo1.qip
 set_global_assignment -name QIP_FILE pll2.qip
 set_global_assignment -name SIP_FILE pll2.sip
 set_global_assignment -name QIP_FILE ram.qip
+set_global_assignment -name QIP_FILE ramH.qip
+set_global_assignment -name QIP_FILE ram1G.qip
 set_global_assignment -name EDA_TEST_BENCH_FILE ntu_smachine2_tb.sv -section_id ntu_smachine2_tb -hdl_version SystemVerilog_2005
 set_global_assignment -name EDA_TEST_BENCH_FILE top1_tb.sv -section_id top1_tb -hdl_version SystemVerilog_2005
 set_global_assignment -name EDA_TEST_BENCH_FILE top1_uart_tb.sv -section_id top1_uart_tb -hdl_version SystemVerilog_2005
 set_global_assignment -name EDA_TEST_BENCH_FILE mixer2_tb.sv -section_id mixer2_tb -hdl_version SystemVerilog_2005
 set_global_assignment -name EDA_TEST_BENCH_FILE barrel_shifter.sv -section_id barrel_shifter_tb -hdl_version SystemVerilog_2005
 set_global_assignment -name EDA_TEST_BENCH_FILE bit_swap.sv -section_id bit_swapper_tb -hdl_version SystemVerilog_2005
-set_global_assignment -name EDA_TEST_BENCH_FILE gen_cost_tb.sv -section_id gen_cost_tb -hdl_version SystemVerilog_2005
 set_global_assignment -name EDA_TEST_BENCH_FILE top1cmd_tb.sv -section_id top1cmd_tb -hdl_version SystemVerilog_2005
 set_global_assignment -name EDA_TEST_BENCH_FILE test_mul_tb.sv -section_id test_mul_tb -hdl_version SystemVerilog_2005
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

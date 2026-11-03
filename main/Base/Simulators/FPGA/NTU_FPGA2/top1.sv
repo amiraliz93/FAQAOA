@@ -9,17 +9,18 @@ module top1 (
    input wire rx_dv,
    output wire [31:0]  o_Status
 );
-
+ 
 localparam NM = 21; // address width for state vector's and cost function's BRAM. Thus, the number of maximum qubits the system can deal with.
+localparam NG = 10; // address width of general memory
 localparam P = 64; // data width for numerical number
 localparam Ni = 5 + 24 + NM;// data width of auxiary information on pipeline.
-localparam NBRAM = 4; // number of block RAMs connected to qaoa system. 
+localparam NBRAM = 1; // number of block RAMs connected to qaoa system. 
 localparam N_BIT_SWAP_POINTER = $clog2(NM);
 localparam LP_BRAM_A = 2; // Address transmisshon pipeline latency
 localparam LP_BRAM_D = 1; // Data retrieving pipeline latency 
-localparam LP_GEN_COST = 2;
-localparam LP_MIXER_IN = 1;
-localparam LP_MIXER_OUT = 1;
+localparam LP_GEN_COST = 0;
+localparam LP_MIXER_IN = 0;
+localparam LP_MIXER_OUT = 0;
 localparam L_BRAM_W = LP_BRAM_A + LP_BRAM_D + 2; // Write latency
 localparam L_BRAM_R = LP_BRAM_A + LP_BRAM_D + 2; // Read latency
 
@@ -45,27 +46,31 @@ wire [NM-1:0] ag_cAddr;       // Next address counter
 wire [N_BIT_SWAP_POINTER-1:0] bsp1;
 wire [N_BIT_SWAP_POINTER-1:0] bsp2;
 
-wire [NM-1:0] bram_addr_r [NBRAM];
-wire [NM-1:0] bram_addr_w [NBRAM];
-wire [P-1:0] bram_data_r [NBRAM];
-wire [P-1:0] bram_data_w [NBRAM];
-wire [NM-1:0] bram_addr_rP [NBRAM];
-wire [NM-1:0] bram_addr_wP [NBRAM];
-wire [P-1:0] bram_data_rP [NBRAM];
-wire [P-1:0] bram_data_wP [NBRAM];
-wire [NBRAM-1:0] bram_wen;
-wire [NBRAM-1:0] bram_wenP;
+wire [NM-1:0] bram_H_addr [NBRAM];
+wire [P-1:0] bram_H_data_w [NBRAM];
+wire [P-1:0] bram_H_data_r [NBRAM];
+wire [NBRAM-1:0] bram_H_wen;
 
-wire [P-1:0] cosb, cosbP;
-wire [P-1:0] sinb, sinbP;
-wire [P-1:0] p_ar, p_arP;
-wire [P-1:0] p_ai, p_aiP;
-wire  [P-1:0]  p_ar_o, p_ar_oP;
-wire  [P-1:0]  p_ai_o, p_ai_oP;
+wire [NG-1:0] bram_G_addr;
+wire [P-1:0] bram_G_data_w;
+wire [P-1:0] bram_G_data_r;
+wire bram_G_wen;
+
+wire [NM-1:0] bram_s_addr_r [NBRAM];
+wire [NM-1:0] bram_s_addr_w [NBRAM];
+wire [P-1:0] bram_sR_data_r [NBRAM];
+wire [P-1:0] bram_sI_data_r [NBRAM];
+wire [P-1:0] bram_sR_data_w [NBRAM];
+wire [P-1:0] bram_sI_data_w [NBRAM];
+wire [NBRAM-1:0] bram_sR_wen;
+wire [NBRAM-1:0] bram_sI_wen;
+
+wire [P-1:0] cosb, sinb;
+wire [P-1:0] p_ar, p_ai,  p_ar_o,p_ai_o;
 wire  [Ni-1:0]  ag_info; // information, like addresses, enabled signal, and so on.
 wire  [Ni-1:0]  bs_info, bs_infoR; // information, like addresses, enabled signal, and so on.
-wire  [1:0]  mix_switch, mix_switchP; // information, like addresses, enabled signal, and so on.
-wire [NM:0] mix_info, mix_infoP, mix_infoR, mix_infoRP;  // NM-1:0 is for address, NM for enable signal.
+wire  [1:0]  mix_switch; // information, like addresses, enabled signal, and so on.
+wire [NM:0] mix_info, mix_infoR;  // NM-1:0 is for address, NM for enable signal.
 
 wire  [P-1:0]  gamma, gammaP; // cos gamma
 wire  [P-1:0]  HGC, HGCP;
@@ -136,7 +141,7 @@ addr_gen #(.N_BIT_SWAP_POINTER(N_BIT_SWAP_POINTER), .NM(NM)) addr_gen_inst(
    .bsp2_out(bsp2)
 );
 
-qaoa_system2 #(.NM(NM), .P(P), .NBRAM(NBRAM),  .L_BRAM_R(L_BRAM_R)) qs2
+qaoa_system2 #(.NM(NM), .NG(NG), .P(P), .NBRAM(NBRAM),  .L_BRAM_R(L_BRAM_R)) qs2
 (
    .CLK(CLK),
    .RST(RSTqs),
@@ -171,11 +176,24 @@ qaoa_system2 #(.NM(NM), .P(P), .NBRAM(NBRAM),  .L_BRAM_R(L_BRAM_R)) qs2
     //------------------------------------------------------------------------
     //BRAM ARRAY INTERFACE (3 banks + 1 general bank)
     //------------------------------------------------------------------------
-   .bram_addr_r(bram_addr_r),
-   .bram_addr_w(bram_addr_w),
-   .bram_data_r(bram_data_rP),
-   .bram_data_w(bram_data_w),
-   .bram_wen(bram_wen),
+   .bram_s_addr_r(bram_s_addr_r),
+   .bram_s_addr_w(bram_s_addr_w),
+   .bram_sR_data_r(bram_sR_data_r),
+   .bram_sI_data_r(bram_sI_data_r),
+   .bram_sR_data_w(bram_sR_data_w),
+   .bram_sI_data_w(bram_sI_data_w),
+   .bram_sR_wen(bram_sR_wen),
+   .bram_sI_wen(bram_sI_wen),
+
+   .bram_H_addr(bram_H_addr),
+   .bram_H_data_r(bram_H_data_r),
+   .bram_H_data_w(bram_H_data_w),
+   .bram_H_wen(bram_H_wen),
+   
+   .bram_G_addr(bram_G_addr),
+   .bram_G_data_r(bram_G_data_r),
+   .bram_G_data_w(bram_G_data_w),
+   .bram_G_wen(bram_G_wen),
 
     //------------------------------------------------------------------------
     // MIXER OPERATION PIPELINE INTERFACE
@@ -188,9 +206,9 @@ qaoa_system2 #(.NM(NM), .P(P), .NBRAM(NBRAM),  .L_BRAM_R(L_BRAM_R)) qs2
    .mix_info(mix_info),
    .mix_switch(mix_switch),
    
-   .mix_ar_res(p_ar_oP),
-   .mix_ai_res(p_ai_oP),
-   .mix_info_res(mix_infoRP),
+   .mix_ar_res(p_ar_o),
+   .mix_ai_res(p_ai_o),
+   .mix_info_res(mix_infoR),
    .Status(rS),
 
     //------------------------------------------------------------------------
@@ -198,8 +216,8 @@ qaoa_system2 #(.NM(NM), .P(P), .NBRAM(NBRAM),  .L_BRAM_R(L_BRAM_R)) qs2
     //------------------------------------------------------------------------
    .gamma(gamma), 
    .HGC(HGC),
-   .Hr_res(Hr_oP),
-   .Hi_res(Hi_oP)
+   .Hr_res(Hr_o),
+   .Hi_res(Hi_o)
 
 
 );
@@ -220,72 +238,226 @@ bit_swap #(.M(N_BIT_SWAP_POINTER), .N(NM), .Np(5), .Ni(Ni)) bit_swap_inst(
     .info_out(bs_info)
 );
 
-regPipeline  #(.W_INFO($bits({gamma, HGC, Hr_o, Hi_o})), .NPipe(LP_GEN_COST)) instp_gc_qs_inst (
-   .CLK(CLK),
-   .info_in({gamma, HGC, Hr_o, Hi_o}),
-   .info_out({gammaP, HGCP, Hr_oP, Hi_oP})
-);
+// gen_costFixedP  #(.P(P)) inst_gencostFixedP
+//   (
+//    .CLK(CLK), // input
+//    .gamma(gammaP), //  gamma, input
+//    .H(HGCP), // input
+//    .Hr_o(Hr_o),
+//    .Hi_o(Hi_o)
+// );
 
-gen_costFixedP  #(.P(P)) inst_gencostFixedP
+updated_gen_cost #(.P(P)) inst_updated_gencost
   (
    .CLK(CLK), // input
-   .gamma(gammaP), //  gamma, input
-   .H(HGCP), // input
+   .gamma(gamma), //  gamma, input
+   .H(HGC), // input
    .Hr_o(Hr_o),
    .Hi_o(Hi_o)
-);
-
-regPipeline  #(.W_INFO($bits({cosb, sinb, p_ar, p_ai, mix_switch, mix_info})), .NPipe(LP_MIXER_OUT)) inst_p_mix_in (
-   .CLK(CLK),
-   .info_in({cosb, sinb, p_ar, p_ai, mix_switch, mix_info}),
-   .info_out({cosbP, sinbP, p_arP, p_aiP, mix_switchP, mix_infoP})
-);
-regPipeline  #(.W_INFO($bits({p_ar_o, p_ai_o, mix_infoR})), .NPipe(LP_MIXER_IN)) inst_p_mix_out (
-   .CLK(CLK),
-   .info_in({p_ar_o, p_ai_o, mix_infoR}),
-   .info_out({p_ar_oP, p_ai_oP, mix_infoRP})
 );
 
 Update_mixer #(.P(P),.Ni(NM+1)) Umix // width of additional information
 (
    .CLK(CLK),
-   .cos_beta(cosbP), // cos beta
-   .sin_beta(sinbP), // sin beta
-   .p_r(p_arP),
-   .p_i(p_aiP),
+   .cos_beta(cosb), // cos beta
+   .sin_beta(sinb), // sin beta
+   .p_r(p_ar),
+   .p_i(p_ai),
    .p_r_o(p_ar_o),
    .p_i_o(p_ai_o),
-   .switch_in(mix_switchP),
-   .info_in(mix_infoP), // information, like addresses, enabled signal, and so on.
+   .switch_in(mix_switch),
+   .info_in(mix_info), // information, like addresses, enabled signal, and so on.
    .info_out(mix_infoR) // information, like addresses, enabled signal, and so on.
 );
+
 
 genvar j;
 
 generate
     for (j = 0; j < NBRAM; j = j + 1) begin : GEN_BRAM
-         
-         regPipeline  #(.W_INFO(P), .NPipe(LP_BRAM_D)) P_BRAMD (
-            .CLK(CLK),
-            .info_in({bram_data_r[j]}),
-            .info_out({bram_data_rP[j]})
-         );
-         regPipeline  #(.W_INFO(NM + NM + 1+ P), .NPipe(LP_BRAM_A)) P_BRAMR (
-            .CLK(CLK),
-            .info_in({bram_addr_r[j], bram_addr_w[j], bram_wen[j], bram_data_w[j]}),
-            .info_out({bram_addr_rP[j], bram_addr_wP[j], bram_wenP[j], bram_data_wP[j]})
-         );
-         ram RAM (.address_a(bram_addr_rP[j]), // NM bit address
-            .address_b(bram_addr_wP[j]),
+
+        // ================================================================
+        // Stage p0 registers
+        // These capture qaoa_system2 outputs first.
+        // ================================================================
+
+        reg [P-1:0]  Rdata_w_p0 /* synthesis preserve */;
+        reg [P-1:0]  Idata_w_p0 /* synthesis preserve */;
+        reg [P-1:0]  Hdata_w_p0 /* synthesis preserve */;
+
+        reg [NM-1:0] Raddr_w_p0 /* synthesis preserve maxfan = 16 */;
+        reg [NM-1:0] Raddr_r_p0 /* synthesis preserve maxfan = 16 */;
+
+        reg [NM-1:0] Iaddr_w_p0 /* synthesis preserve maxfan = 16 */;
+        reg [NM-1:0] Iaddr_r_p0 /* synthesis preserve maxfan = 16 */;
+
+        reg [NM-1:0] Haddr_p0   /* synthesis preserve maxfan = 16 */;
+
+        reg Rwen_p0 /* synthesis preserve */;
+        reg Iwen_p0 /* synthesis preserve */;
+        reg Hwen_p0 /* synthesis preserve */;
+
+
+        // ================================================================
+        // Final RAM-input registers
+        // These directly drive each RAM instance.
+        // Quartus can place these close to each RAM port.
+        // ================================================================
+
+        reg [P-1:0]  Rdata_w /* synthesis preserve */;
+        reg [P-1:0]  Idata_w /* synthesis preserve */;
+        reg [P-1:0]  Hdata_w /* synthesis preserve */;
+
+        reg [NM-1:0] Raddr_w /* synthesis preserve maxfan = 16 */;
+        reg [NM-1:0] Raddr_r /* synthesis preserve maxfan = 16 */;
+
+        reg [NM-1:0] Iaddr_w /* synthesis preserve maxfan = 16 */;
+        reg [NM-1:0] Iaddr_r /* synthesis preserve maxfan = 16 */;
+
+        reg [NM-1:0] Haddr   /* synthesis preserve maxfan = 16 */;
+
+        reg Rwen /* synthesis preserve */;
+        reg Iwen /* synthesis preserve */;
+        reg Hwen /* synthesis preserve */;
+
+
+        // ================================================================
+        // Registered RAM read outputs
+        // ================================================================
+
+        reg  [P-1:0] Rdata_r;
+        reg  [P-1:0] Idata_r;
+        reg  [P-1:0] Hdata_r;
+
+        wire [P-1:0] mRdata_r;
+        wire [P-1:0] mIdata_r;
+        wire [P-1:0] mHdata_r;
+
+
+        // ================================================================
+        // Two-stage RAM input pipeline
+        // ================================================================
+
+        always @(posedge CLK) begin
+
+            // ------------------------------------------------------------
+            // Pipeline stage p0
+            // Capture signals from qaoa_system2
+            // ------------------------------------------------------------
+
+            Rdata_w_p0 <= bram_sR_data_w[j];
+            Idata_w_p0 <= bram_sI_data_w[j];
+            Hdata_w_p0 <= bram_H_data_w[j];
+
+            Raddr_w_p0 <= bram_s_addr_w[j];
+            Raddr_r_p0 <= bram_s_addr_r[j];
+
+            Iaddr_w_p0 <= bram_s_addr_w[j];
+            Iaddr_r_p0 <= bram_s_addr_r[j];
+
+            Haddr_p0   <= bram_H_addr[j];
+
+            Rwen_p0    <= bram_sR_wen[j];
+            Iwen_p0    <= bram_sI_wen[j];
+            Hwen_p0    <= bram_H_wen[j];
+
+
+            // ------------------------------------------------------------
+            // Final RAM-input stage
+            // These registers directly drive RAM ports.
+            // ------------------------------------------------------------
+
+            Rdata_w <= Rdata_w_p0;
+            Idata_w <= Idata_w_p0;
+            Hdata_w <= Hdata_w_p0;
+
+            Raddr_w <= Raddr_w_p0;
+            Raddr_r <= Raddr_r_p0;
+
+            Iaddr_w <= Iaddr_w_p0;
+            Iaddr_r <= Iaddr_r_p0;
+
+            Haddr   <= Haddr_p0;
+
+            Rwen    <= Rwen_p0;
+            Iwen    <= Iwen_p0;
+            Hwen    <= Hwen_p0;
+
+
+            // ------------------------------------------------------------
+            // RAM output register stage
+            // ------------------------------------------------------------
+
+            Rdata_r <= mRdata_r;
+            Idata_r <= mIdata_r;
+            Hdata_r <= mHdata_r;
+        end
+
+
+        // ================================================================
+        // Connect registered RAM outputs back to qaoa_system2
+        // ================================================================
+
+        assign bram_sR_data_r[j] = Rdata_r;
+        assign bram_sI_data_r[j] = Idata_r;
+        assign bram_H_data_r[j]  = Hdata_r;
+
+
+        // ================================================================
+        // RAM instances
+        // Each RAM now has its own duplicated address path.
+        // ================================================================
+
+        ram RAMR (
+            .address_a(Raddr_r),
+            .address_b(Raddr_w),
             .clock(CLK),
-            .data_a(), // 64 bit
-            .data_b(bram_data_wP[j]),
-            .wren_a(),
-            .wren_b(bram_wenP[j]),
-            .q_a(bram_data_r[j]),
-            .q_b()
-            );
+            .data_b(Rdata_w),
+            .wren_b(Rwen),
+            .q_a(mRdata_r)
+        );
+
+        ram RAMI (
+            .address_a(Iaddr_r),
+            .address_b(Iaddr_w),
+            .clock(CLK),
+            .data_b(Idata_w),
+            .wren_b(Iwen),
+            .q_a(mIdata_r)
+        );
+
+        ramH RAMH (
+            .address(Haddr),
+            .clock(CLK),
+            .data(Hdata_w),
+            .wren(Hwen),
+            .q(mHdata_r)
+        );
+
     end
 endgenerate
+
+reg [P-1:0] ddata_w, ddata_wp0, ddata_r;
+reg [NG-1:0] daddr, daddrp0;
+wire [P-1:0] mdata_r;
+reg wen, wenp0;
+always @(posedge CLK) begin
+   ddata_wp0 <= bram_G_data_w;
+   ddata_w <= ddata_wp0;
+   daddrp0 <= bram_G_addr;
+   daddr <= daddrp0;
+   ddata_r <= mdata_r;
+   wenp0 <= bram_G_wen;
+   wen <= wenp0;
+end
+assign bram_G_data_r = ddata_r;
+
+ram1G RAMG(
+   .clock(CLK),
+   .data(ddata_w),
+   .address(daddr),
+   .wren(wen),
+   .q(mdata_r)
+);
 
 endmodule

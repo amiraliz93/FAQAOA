@@ -34,6 +34,7 @@ module qaoa_system2#(
     //------------------------------------------------------------------------
     // CONFIGURABLE PARAMETERS
     //------------------------------------------------------------------------
+    parameter NG = 10,
     parameter NM = 21,   // BRAM address width (2^13 = 8192 elements)
     parameter P = 64,    // Data width (64bit FP)
     parameter NBRAM=4,   // number of Bram banks
@@ -102,11 +103,22 @@ module qaoa_system2#(
     //------------------------------------------------------------------------
     //BRAM ARRAY INTERFACE (3 banks + 1 general bank)
     //------------------------------------------------------------------------
-    output reg [NBRAM-1:0] bram_wen,
-    input [P-1:0] bram_data_r [NBRAM],
-    output reg [P-1:0] bram_data_w [NBRAM],
-    output reg [NM-1:0] bram_addr_r [NBRAM],
-    output reg [NM-1:0] bram_addr_w [NBRAM]
+    output reg [NBRAM-1:0] bram_sR_wen,
+    output reg [NBRAM-1:0] bram_sI_wen,
+    output reg [NBRAM-1:0] bram_H_wen,
+    output reg bram_G_wen,
+    input [P-1:0] bram_sR_data_r [NBRAM],
+    input [P-1:0] bram_sI_data_r [NBRAM],
+    input [P-1:0] bram_H_data_r [NBRAM],
+    input [P-1:0] bram_G_data_r,
+    output reg [P-1:0] bram_sR_data_w [NBRAM],
+    output reg [P-1:0] bram_sI_data_w [NBRAM],
+    output reg [P-1:0] bram_H_data_w [NBRAM],
+    output reg [P-1:0] bram_G_data_w,
+    output reg [NM-1:0] bram_s_addr_r [NBRAM],
+    output reg [NM-1:0] bram_s_addr_w [NBRAM],
+    output reg [NM-1:0] bram_H_addr [NBRAM],
+    output reg [NG-1:0] bram_G_addr
 );
 //============================================================================
 // LOCALPARAMS - Internal Constants
@@ -166,7 +178,8 @@ reg [P-1:0] b_sinb;         // Next sin(β), buffer to align the timining
 logic [P-1:0] n_gamma;        // Next γ
 logic [P-1:0] nb_gamma;        // Next γ
 reg [P-1:0] b_gamma; // cos gamma - γ parameter
-
+logic [41: 0] n_CompCounter;
+reg [41: 0] CompCounter;
 //----------------------------------------------------------------------------
 // Mixer Operation Registers
 //----------------------------------------------------------------------------
@@ -200,10 +213,18 @@ assign {bram_infoAO, bram_sinbO, bram_cosbO, bram_gammaO, bram_reqR} = bram_reqP
 //----------------------------------------------------------------------------
 // BRAM Control Signals (Next Values)
 //----------------------------------------------------------------------------
-logic [NM-1:0] n_bram_addr_r [NBRAM];  // Next read addresses
-logic [NM-1:0] n_bram_addr_w [NBRAM];  // Next write addresses
-logic [P-1:0]  n_bram_data_w [NBRAM];  // Next write data
-logic [NBRAM-1:0] n_bram_wen;          // Next write enables
+logic [NM-1:0] n_bram_s_addr_r [NBRAM];  // Next read addresses
+logic [NM-1:0] n_bram_s_addr_w [NBRAM];  // Next write addresses
+logic [NM-1:0] n_bram_H_addr [NBRAM];  // Next write addresses
+logic [NG-1:0] n_bram_G_addr;  // Next write addresses
+logic [P-1:0]  n_bram_sR_data_w [NBRAM];  // Next write data
+logic [P-1:0]  n_bram_sI_data_w [NBRAM];  // Next write data
+logic [P-1:0]  n_bram_H_data_w [NBRAM];  // Next write data
+logic [P-1:0]  n_bram_G_data_w;  // Next write data
+logic [NBRAM-1:0] n_bram_sR_wen;          // Next write enables
+logic [NBRAM-1:0] n_bram_sI_wen;          // Next write enables
+logic [NBRAM-1:0] n_bram_H_wen;          // Next write enables
+logic n_bram_G_wen;          // Next write enables
 
 //----------------------------------------------------------------------------
 // Test/Debug Register
@@ -222,11 +243,19 @@ always_comb begin: memorySwitchingBlock
     n_r_vd = 0;                         // No read valid by default
     n_testReg = testReg;                // Keep test register
     n_r_data = 'd0;                       // Clear read data
-    n_bram_wen = 'd0;                     // No BRAM writes by default
+    n_bram_sR_wen = 'd0;                     // No BRAM writes by default
+    n_bram_sI_wen = 'd0;                     // No BRAM writes by default
+    n_bram_H_wen = 'd0;                     // No BRAM writes by default
+    n_bram_G_wen = 'd0;                     // No BRAM writes by default
 
-    n_bram_addr_w = bram_addr_w;        // Keep write addresses
-    n_bram_addr_r = bram_addr_r;        // Keep read addresses
-    n_bram_data_w = bram_data_w;        // Keep write data
+    n_bram_s_addr_w = bram_s_addr_w;        // Keep write addresses
+    n_bram_s_addr_r = bram_s_addr_r;        // Keep read addresses
+    n_bram_H_addr = bram_H_addr;        // Keep write addresses
+    n_bram_G_addr = bram_G_addr;        // Keep write addresses
+    n_bram_sR_data_w = bram_sR_data_w;        // Keep write data
+    n_bram_sI_data_w = bram_sI_data_w;        // Keep write data
+    n_bram_H_data_w = bram_H_data_w;        // Keep write data
+    n_bram_G_data_w = bram_G_data_w;        // Keep write data
     n_bram_reqQ = '0;                  // No new BRAM request
     n_cmd = cmd0;                        // Keep current command
 
@@ -249,6 +278,7 @@ always_comb begin: memorySwitchingBlock
     nb_cosb = b_cosb;
     nb_sinb = b_sinb;
 
+    n_CompCounter = CompCounter;
     n_P5pointer = P5pointer;
     // read cosb, sinb, gamma, at the beginning of the first 
     // request cos(beta)
@@ -257,14 +287,14 @@ always_comb begin: memorySwitchingBlock
     end
 
     if(en_Inits_in[LATENCY_BRAM]) begin
-        nb_cosb = bram_data_r[3]; // store to temporal buffer of cosb, later written to cosb itself.
+        nb_cosb = bram_G_data_r; // store to temporal buffer of cosb, later written to cosb itself.
     end
     if(en_Inits_in[LATENCY_BRAM+1]) begin
         // write to sinb
-        nb_sinb = bram_data_r[3]; // store to temporal buffer
+        nb_sinb = bram_G_data_r; // store to temporal buffer
     end
     if(en_Inits_in[LATENCY_BRAM+2]) begin 
-        nb_gamma = bram_data_r[3];
+        nb_gamma = bram_G_data_r;
     end
     //------------------------------------------------------------------------
     // MAIN STATE MACHINE
@@ -282,37 +312,38 @@ always_comb begin: memorySwitchingBlock
             n_r_data[P-1:8] = '0;
             n_r_vd = r_req;
         end
-        2: begin 
-            n_r_data = testReg;
+        2: begin
+            n_r_data[41:0] = CompCounter;
+            n_r_data[P-1:42] = '0;
             n_r_vd = r_req;
         end
-        4: begin 
-            n_bram_addr_r[2] = ci_addr[NM-1:0];
+        4: begin // Hamiltonian
+            n_bram_H_addr[0] = ci_addr[NM-1:0];
             n_bram_reqQ[NM] = r_req;
             n_r_vd = bram_reqR[NM];
-            n_r_data = bram_data_r[2];
+            n_r_data = bram_H_data_r[0];
         end
         8: begin  // read sin(b), cos(b), gamma, I think we will use this function just for debugging.
-            n_bram_addr_r[3] =  ci_addr[NM-1:0];
+            n_bram_G_addr =  ci_addr[NM-1:0];
             n_bram_reqQ[NM+1] = r_req;
             n_r_vd = bram_reqR[NM+1];
-            n_r_data = bram_data_r[3];
+            n_r_data = bram_G_data_r;
         end
         16: begin // read real part of the state vector
-            n_bram_addr_r[0] =  ci_addr[NM-1:0]; 
+            n_bram_s_addr_r[0] =  ci_addr[NM-1:0]; 
             n_bram_reqQ[NM+2] = r_req;
             n_r_vd = bram_reqR[NM+2];
-            n_r_data = bram_data_r[0];
+            n_r_data = bram_sR_data_r[0];
         end 
         32: begin // read imag part of the state vector
-            n_bram_addr_r[1] =  ci_addr[NM-1:0];
+            n_bram_s_addr_r[0] =  ci_addr[NM-1:0];
             n_bram_reqQ[NM+3] = r_req;
             n_r_vd = bram_reqR[NM+3];
-            n_r_data = bram_data_r[1];
+            n_r_data = bram_sI_data_r[0];
         end 
         default: begin 
             n_r_vd = r_req;
-            n_r_data = testReg;
+            n_r_data = testReg; // send counter.
         end
         endcase
 
@@ -327,25 +358,25 @@ always_comb begin: memorySwitchingBlock
             2: begin 
                 n_testReg = testReg + 1;
             end
-            4: begin // write to cost function
-                n_bram_addr_w[2] = ci_addr[NM-1:0];
-                n_bram_data_w[2] = w_data;
-                n_bram_wen[2] = 1;
+            4: begin // write to hamiltonian
+                n_bram_H_addr[0] = ci_addr[NM-1:0];
+                n_bram_H_data_w[0] = w_data;
+                n_bram_H_wen[0] = 1;
             end
             8: begin // write to sin(b) cos(b), gamma, 
-                n_bram_addr_w[3] = ci_addr[NM-1:0];
-                n_bram_data_w[3] = w_data;
-                n_bram_wen[3] = 1;
+                n_bram_G_addr = ci_addr[NM-1:0];
+                n_bram_G_data_w = w_data;
+                n_bram_G_wen = 1;
             end
-            16: begin // write to state vector, we need to implement a switching function of writing to real and imaginary part.
-                n_bram_addr_w[0] = ci_addr[NM-1:0];
-                n_bram_data_w[0] = w_data;
-                n_bram_wen[0] = 1;
+            16: begin // write to real part of state vector
+                n_bram_s_addr_w[0] = ci_addr[NM-1:0];
+                n_bram_sR_data_w[0] = w_data;
+                n_bram_sR_wen[0] = 1;
             end 
-            32: begin // write to state vector, we need to implement a switching function of writing to real and imaginary part.
-                n_bram_addr_w[1] = ci_addr[NM-1:0];
-                n_bram_data_w[1] = w_data;
-                n_bram_wen[1] = 1;
+            32: begin // write to imaginary part of state vector
+                n_bram_s_addr_w[0] = ci_addr[NM-1:0];
+                n_bram_sI_data_w[0] = w_data;
+                n_bram_sI_wen[0] = 1;
             end 
             default: begin 
                 n_testReg = w_data;
@@ -358,6 +389,7 @@ always_comb begin: memorySwitchingBlock
         n_f_run_Computation = 1;
         n_cmd = qa_RUNC;
         n_P5pointer = 0;
+        n_CompCounter = 0;
     end
     // qa_RUN: Apply cost Hamiltonian and check layer completion
     //========================================================================
@@ -366,19 +398,18 @@ always_comb begin: memorySwitchingBlock
         // Memory access part.
         // Index generator to BRAM. Index generator input is defined in n_bs_info_in.
         // --------------------------------------------
-        n_bram_addr_r[2] = cAddrCF_in; // addressing for cost function generation
-        n_bram_addr_r[0] = swapped_cAddr_in;
-        n_bram_addr_r[1] = swapped_cAddr_in;
+        n_bram_H_addr[0] = cAddrCF_in; // addressing for cost function generation
+        n_bram_s_addr_r[0] = swapped_cAddr_in;
         n_bram_reqQ[NM-1:0] = swapped_cAddr_in; // pass address, for storation after mixer.
-        n_bram_addr_r[3] = P5pointer[NM-1:0];
-
+        n_bram_G_addr = P5pointer[NG-1:0];
+        n_CompCounter = CompCounter + 1;
         // --------------------------------------------
         // BRAM data to each arithmetric block
         // --------------------------------------------
-        n_HGC = bram_data_r[2]; // supply hamiltonian to generator.
+        n_HGC = bram_H_data_r[0]; // supply hamiltonian to generator.
         n_mix_switch = bram_infoAO[2:1];
-        n_mix_ar = bram_data_r[0]; 
-        n_mix_ai = bram_data_r[1];
+        n_mix_ar = bram_sR_data_r[0]; 
+        n_mix_ai = bram_sI_data_r[0];
         n_mix_info[NM-1:0] = bram_reqR[NM-1:0];
         n_mix_info[NM] = bram_infoAO[0]; // contains write enable.
 
@@ -386,12 +417,11 @@ always_comb begin: memorySwitchingBlock
         // Write back output of arithmetric block to BRAM
         // Output from cost function gen is directly supplied to mixer block, see n_bs_info_in part in always_comb computingBlock.
         // --------------------------------------------
-        n_bram_addr_w[0] = mix_info_res[NM-1:0];
-        n_bram_addr_w[1] = mix_info_res[NM-1:0];
-        n_bram_data_w[0] = mix_ar_res;
-        n_bram_data_w[1] = mix_ai_res;
-        n_bram_wen[0] = mix_info_res[NM];
-        n_bram_wen[1] = mix_info_res[NM];
+        n_bram_s_addr_w[0] = mix_info_res[NM-1:0];
+        n_bram_sR_data_w[0] = mix_ar_res;
+        n_bram_sI_data_w[0] = mix_ai_res;
+        n_bram_sR_wen[0] = mix_info_res[NM];
+        n_bram_sI_wen[0] = mix_info_res[NM];
         // !! remove bswap chain from pipeline. No need to include addressing latency. ok 20260429
         // !! any number of pipeline for addressing is possible!.
         // !! include enCostF in bs information chain.
@@ -448,7 +478,10 @@ always@(posedge CLK) begin
         testReg <= 'd175;
         // Configuration
         mix_switch <= 'd0;
-        bram_wen <= 'd0;
+        bram_G_wen <= 'd0;
+        bram_H_wen <= 'd0;
+        bram_sR_wen <= 'd0;
+        bram_sI_wen <= 'd0;
 
         f_run_Computation <= 'd0;
         // initialize with invalid values.
@@ -483,11 +516,9 @@ always@(posedge CLK) begin
         w_data <= n_w_data;
         w_req <= n_w_req;
 
-        
-
-            b_cosb <= nb_cosb;
-            b_sinb <= nb_sinb;
-            b_gamma <= nb_gamma;
+        b_cosb <= nb_cosb;
+        b_sinb <= nb_sinb;
+        b_gamma <= nb_gamma;
         // en_CostF = 1, after finish cost generation. Do not use global timing, because
         // need to be disscussed more in detail.
         f_run_Computation <= n_f_run_Computation;
@@ -508,15 +539,25 @@ always@(posedge CLK) begin
     HGC <= n_HGC;
 
     // BRAM control
-    bram_wen <= n_bram_wen;
-    bram_addr_w <= n_bram_addr_w;
-    bram_addr_r <= n_bram_addr_r;
-    bram_data_w <= n_bram_data_w;
+    bram_sR_wen <= n_bram_sR_wen;
+    bram_sI_wen <= n_bram_sI_wen;
+    bram_H_wen <= n_bram_H_wen;
+    bram_G_wen <= n_bram_G_wen;
+    bram_s_addr_w <= n_bram_s_addr_w;
+    bram_s_addr_r <= n_bram_s_addr_r;
+    bram_H_addr <= n_bram_H_addr;
+    bram_G_addr <= n_bram_G_addr;
+    bram_sR_data_w <= n_bram_sR_data_w;
+    bram_sI_data_w <= n_bram_sI_data_w;
+    bram_H_data_w <= n_bram_H_data_w;
+    bram_G_data_w <= n_bram_G_data_w;
+    
     // Debug
     StatusL[7:0] <= n_cmd[7:0];
     StatusL[8] <= f_run_Computation;
     StatusL[15:9] <= 7'(P5pointer);
     Status <= StatusL;
+    CompCounter <= n_CompCounter;
 
     cmd1 <= cmd0;
     cmdL <= cmd1;

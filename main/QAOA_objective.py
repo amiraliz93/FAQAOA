@@ -8,7 +8,7 @@ from functools import reduce
 from qiskit_aer import AerSimulator
 import typing
 import networkx as nx
-
+import time
 from .Base import choose_simulator, qaoa_simulator_base
 from . import parameter_utils
 from .parameter_utils import QAOAParameterization
@@ -93,11 +93,29 @@ def _create_qiskit_objective(
 
         # Run Circuit
         # Transpile circuit for the simulator
-        bound_qc = qc.bind_parameters(parameter_values)
+
+
+        bound_qc = qc.assign_parameters(dict(zip(qc.parameters,
+parameter_values)), inplace=False)
         transpiled_qc = transpile(bound_qc, simulator)
+        
+        t0 = time.perf_counter()
         job = simulator.run(transpiled_qc)
         result = job.result()
+        elapsed = time.perf_counter() - t0
         statevector = result.get_statevector()
+
+
+        print(f"qiskit_compute_sec {elapsed:.9g} s")
+
+        with open("statistics.txt", "a") as fp:
+            fp.write("---------------------------------------\n")
+            fp.write("  summary of the computation  \n")
+            fp.write("---------------------------------------\n")
+            fp.write(f"qiskit: {elapsed:.9g}\n")
+            fp.write(f"NQ: {int(np.log2(len(statevector)))}\n")
+            fp.write(f"NP: {p}\n")
+            fp.write(f"NS: {len(statevector)}\n")
         
         # Calculate expectation value <ψ|H|ψ>
         probabilities = np.abs(statevector.data)**2
@@ -139,6 +157,7 @@ def get_qaoa_objective(
     initial_state: np.ndarray | None = None,
     n_trotters: int = 1,
     optimization_type="min",
+    fpga_config: dict | None = None,
     ) -> typing.Callable:
 
     """Return QAOA objective to be minimized
@@ -188,12 +207,11 @@ def get_qaoa_objective(
     
     if N is None: 
         raise ValueError("N must be specified if G is not provided")
-    
+    simulator = simulator.upper()
     # 2. QISKIT SIMULATOR
 # ============================================
-
 #  Qiskit edge case
-    if simulator == "qiskit":
+    if simulator == "QISKIT":
         """
         if precomputed_costs is None:
             precomputed_costs = precomputed_diagonal_hamiltonian
@@ -225,7 +243,7 @@ def get_qaoa_objective(
 # 3. REGULAR SIMULATOR (CPU/GPU/FPGA)
 # ============================================
     if mixer == "x": # for x mixer 
-        sim = choose_simulator(name= simulator)(N, terms=terms, costs=precomputed_diagonal_hamiltonian)
+        sim = choose_simulator(name= simulator)(N, terms=terms, costs=precomputed_diagonal_hamiltonian, fpga_config=fpga_config)
     else:
         raise ValueError(f"Unknown mixer type passed to get_qaoa_objective: {mixer}, allowed ['x', 'xy']")
     

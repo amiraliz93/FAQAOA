@@ -49,7 +49,7 @@ begin
 end
 
 `include "all_test_cmd.sv"  // The contents of the file will be expanded here.
-
+//`include "new_test_cmd.sv"
 localparam OP_NONE = 0; // Send: 1, Res: 0.
 localparam OP_SEND1T = 1; // Send: 0, Res: 1.
 localparam OP_SEND8T = 2; // Send: 0, Res: 1.
@@ -88,6 +88,7 @@ integer i;
 integer j;
 integer k;
 integer t;
+reg validRead;
 string filename;
 always @(posedge CLK) begin
       if(recState == 1) begin
@@ -110,6 +111,7 @@ initial begin
       recCount <= 0;
       recState <= 0;
       txCount <=  0;
+      validRead <= 0;
 
       fp64 = 64'he000_0000_0000_0000; // -1
       None8 = 64'd0;
@@ -120,6 +122,7 @@ initial begin
       $display("Starting the %d-th computation", t);
       filename = $sformatf("result_sim%0d.txt",t);
       fd= $fopen(filename, "w");
+      validRead <= 0;
 
       for (i = 0; i <ND ; i = i + 1) begin
             tx_data_in <= data_array[i];
@@ -148,6 +151,7 @@ initial begin
 
             end
             else if(data_array[i] == HOST_WAIT) begin
+                  validRead <= 1;
                   for(j = 0; j < N_MAX_WAIT; j = j + 1) begin
                         tx_data_in <= OP_MOV_S2U;
                         tx_dv <= 1;
@@ -191,7 +195,9 @@ initial begin
                               break;
                         end 
                   end
-                  $fwrite(fd, "0x%016h\n", rx64);
+                  if(validRead) begin 
+                        $fwrite(fd, "0x%016h\n", rx64);
+                  end
             end
             else begin
                   tx_dv <= 1;

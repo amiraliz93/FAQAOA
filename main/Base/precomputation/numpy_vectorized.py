@@ -22,11 +22,6 @@ def precompute_vectorized_cpu_parallel(weighted_terms, offset, N):
       it returns the full diagonal vector:
       hc_dig[s] = f(s) for all states s in [0, 2**N-1]
 
-    Args:
-        weighted_terms (_type_): _description_
-        offset (_type_): _description_
-        N (_type_): _description_
-
     Returns:
         _type_: _description_
     """
