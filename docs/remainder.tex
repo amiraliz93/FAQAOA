@@ -15,7 +15,9 @@
 \newenvironment{XA}
   {\color[rgb]{0.4,0.0,0.1}.}
   {}
-\newcommand{\eqlabel}[1]{\label{#1}\tag{#1}}
+\newcommand{\eqlabel}[1]{\label{#1}
+%\tag{#1}
+}
 
 \newcommand{\sbr}[1]{\left[#1\right]}
 \newcommand{\br}[1]{\left(#1\right)}
@@ -323,7 +325,7 @@ Substituting these to \eqref{eCXf2}, we have,
 \[
  C_m(x*k)\fum + \hat{(x k)}_F = \hk\fum (\hX_I - 2^{n-m-1}x_n) + \hs(x' k)\fum + \hat{(x' k)}_F.
 \]
-As in the unsigned case, \(\hat{(x*k)}_F = \hat{(x' k)_F}\). This can be directly confirmed from the definition \eqref{eB2I} as well. So we have,
+As in the unsigned case, \(\hat{(x*k)}_F = \hat{(x' k)}_F\). This can be directly confirmed from the definition \eqref{eB2I} as well. So we have,
 \[ 
   C_m(x*k) = \hk (\hX_I - 2^{n-m-1}x_n) + \hs(x' k).
 \]

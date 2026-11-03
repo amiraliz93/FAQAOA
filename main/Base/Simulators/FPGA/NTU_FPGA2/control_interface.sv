@@ -140,6 +140,8 @@ localparam WRITE_T2B         = 5'd2;   // rB = rT
 localparam WRITE_A2B         = 5'd3;   // rB = rA
 localparam WRITE_A2U         = 5'd4;   // rU = rA
 localparam WRITE_B2A         = 5'd5;   // rA = rB
+localparam WRITE_mulFP64_rA  = 5'd6;   // rA = res_mulFP64 (FP multiply result)
+localparam WRITE_addFP64_rA  = 5'd7;   // rA = res_addFP64 (FP add result)
 localparam WRITE_add_rA      = 5'd9;   // rA = res_addAB (fixed add result)
 localparam WRITE_rA1         = 5'd10;  // rA = rA + 1
 localparam WRITE_rB1         = 5'd11;  // rB = rB + 1
@@ -747,6 +749,4 @@ always @(posedge CLK) begin
 end
 
 
-
 endmodule
-
