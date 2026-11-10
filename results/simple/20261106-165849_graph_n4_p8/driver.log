@@ -1,0 +1,42 @@
+Connecting to FPGA on COM5...
+checking COM5...
+✓ FPGA connected: NTUSMv01
+gamma_scaled [0.88401849 1.09698522 0.42449923 0.00744627 1.1272264  0.42855257
+ 0.36044003 0.71353899]
+Loading data to FPGA...
+  Phase 1: Reset cycle...
+tGenCost = 59 greater than LInit = 24.
+  Phase 2: addr_gen timing config...
+  Phase 3: Load parameters...
+
+writing 0 th layer, 0.8840184866502582, 0.1607556216494779, 0.986994240159531
+
+
+writing 1 th layer, 1.0969852232834882, 0.1607556216494779, 0.986994240159531
+
+
+writing 2 th layer, 0.42449923108860155, 0.9380786413077731, 0.34642237618572275
+
+
+writing 3 th layer, 0.007446265126660753, 0.19731839861702488, 0.9803394562942026
+
+
+writing 4 th layer, 1.1272263962941191, 0.27713760982576907, 0.9608302374613633
+
+
+writing 5 th layer, 0.4285525678467056, 0.7418102967250009, 0.6706097849515515
+
+
+writing 6 th layer, 0.36044002749690135, 0.9058772548411649, 0.4235403158631245
+
+
+writing 7 th layer, 0.7135389906900701, 0.7654060827310397, 0.6435476116949894
+
+
+writing 8 th layer, -1.0, 0.6452608818674875, 0.7639622990250189
+
+  Phase 4: Load state and cost data...
+✓ Data loaded to FPGA
+waiting the computation...
+Disconnecting from FPGA...
+✓ Disconnected
