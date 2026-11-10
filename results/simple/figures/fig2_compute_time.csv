@@ -1,0 +1,42 @@
+p,simulator,graph,n,T_run_median_s,T_run_min_s,T_run_max_s,repeats,source
+1,fpga,any,2,1.609375e-06,,,,counter
+1,fpga,any,3,1.55625e-06,,,,counter
+1,fpga,any,4,1.64375e-06,,,,counter
+1,fpga,any,5,1.68125e-06,,,,counter
+1,fpga,any,6,2.334375e-06,,,,counter
+1,fpga,any,7,4.134375e-06,,,,counter
+1,fpga,any,8,8.134375e-06,,,,counter
+1,fpga,any,9,1.7734375e-05,,,,counter
+1,fpga,any,10,3.8534375e-05,,,,counter
+1,fpga,any,11,8.3334375e-05,,,,counter
+1,fpga,any,12,0.000179334,,,,counter
+1,fpga,any,13,0.000384134,,,,counter
+1,fpga,any,14,0.000819334,,,,counter
+1,fpga,any,15,0.001740934,,,,counter
+1,fpga,any,16,0.003686534,,,,counter
+1,aer,complete,4,0.0010518,0.0010011,0.0016599,5,run() + result()
+1,aer,complete,8,0.0019501,0.0016504,0.0025709,5,run() + result()
+1,aer,complete,10,0.0036229,0.0026916,0.0036881,5,run() + result()
+1,aer,complete,12,0.0072198,0.0050425,0.0073206,5,run() + result()
+1,aer,complete,14,0.0140413,0.0124606,0.0166625,5,run() + result()
+1,aer,complete,16,0.0150457,0.0137418,0.0189652,5,run() + result()
+1,aer,regular,4,0.0011136,0.0010362,0.0012853,5,run() + result()
+1,aer,regular,10,0.003446,0.0026755,0.0037898,5,run() + result()
+1,aer,regular,12,0.0044999,0.002484,0.005299,5,run() + result()
+1,aer,regular,16,0.0088731,0.0056897,0.0104374,5,run() + result()
+32,fpga,any,4,2.334375e-05,,,,counter
+32,fpga,any,8,0.000231334,,,,counter
+32,fpga,any,10,0.001129734,,,,counter
+32,fpga,any,12,0.005337734,,,,counter
+32,fpga,any,14,0.024627334,,,,counter
+32,fpga,any,16,0.111616134,,,,counter
+32,aer,complete,4,0.0085957,0.008307,0.0088558,5,run() + result()
+32,aer,complete,8,0.0369168,0.0338709,0.0453359,5,run() + result()
+32,aer,complete,10,0.0813991,0.0726892,0.1241525,5,run() + result()
+32,aer,complete,12,0.1509277,0.1369753,0.1558681,5,run() + result()
+32,aer,complete,14,0.3351142,0.3268776,0.4495326,5,run() + result()
+32,aer,complete,16,0.3272563,0.3094649,0.4255064,5,run() + result()
+32,aer,regular,4,0.0104694,0.0100687,0.0111702,5,run() + result()
+32,aer,regular,10,0.0353329,0.0303006,0.0613239,5,run() + result()
+32,aer,regular,12,0.0450085,0.0402955,0.0639203,5,run() + result()
+32,aer,regular,16,0.0995485,0.0976518,0.1197915,5,run() + result()
